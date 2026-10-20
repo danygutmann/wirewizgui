@@ -1,18 +1,26 @@
+import json
 import os
-import re
 import uuid
-from collections import OrderedDict
+from pathlib import Path
 
 from flask import Blueprint, current_app, jsonify, render_template, request, session
 from werkzeug.exceptions import BadRequest
 
-from wireviz_gui.snippets import EXAMPLE, SNIPPETS
-from wireviz_gui.storage import list_projects, load_project, save_project
+from wireviz_gui.storage import (
+    list_projects,
+    list_user_templates,
+    load_project,
+    load_user_template,
+    save_project,
+)
 from wireviz_gui.validation import validate_yaml
 from wireviz_gui.wireviz_api import ApiFailure, ApiTimeout, render_yaml
 
 api = Blueprint("gui", __name__)
 MAX_YAML_BYTES = 1_048_576
+SNIPPET_DATA = json.loads(Path(__file__).with_name("snippets.json").read_text(encoding="utf-8"))
+EXAMPLE = SNIPPET_DATA["example"]
+SNIPPETS = SNIPPET_DATA["snippets"]
 
 
 def _json_object():
@@ -46,7 +54,7 @@ def security_headers(response):
     response.headers.setdefault("Referrer-Policy", "same-origin")
     response.headers.setdefault(
         "Content-Security-Policy",
-        "default-src 'self'; img-src 'self' blob:; style-src 'self'; "
+        "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; "
         "script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'",
     )
     return response
@@ -123,3 +131,13 @@ def save():
 @api.get("/api/projects/<name>")
 def load(name):
     return jsonify({"name": name, "yaml": load_project(current_app.config["DATA_DIR"], name)})
+
+
+@api.get("/api/user-templates")
+def user_templates():
+    return jsonify({"templates": list_user_templates(current_app.config["DATA_DIR"])})
+
+
+@api.get("/api/user-templates/<name>")
+def user_template(name):
+    return jsonify({"name": name, "yaml": load_user_template(current_app.config["DATA_DIR"], name)})

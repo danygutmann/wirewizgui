@@ -3,6 +3,7 @@ import { yaml } from "@codemirror/lang-yaml";
 import { indentWithTab } from "@codemirror/commands";
 import { keymap } from "@codemirror/view";
 import YAML from "yaml";
+import { insertSnippet } from "./insertion.js";
 import "./style.css";
 
 const $ = (selector) => document.querySelector(selector);
@@ -82,52 +83,6 @@ function setDocument(source) {
   showValidation();
 }
 
-function safeTopLevelInsertion(source, cursor) {
-  const line = editor.state.doc.lineAt(cursor);
-  const beforeCursor = line.text.slice(0, cursor - line.from);
-  return beforeCursor.trim() === "" && (line.text.trim() === "" || !/^\s/.test(line.text));
-}
-
-function appendTemplate(source, snippet) {
-  const sourceDoc = YAML.parseDocument(source, { uniqueKeys: true });
-  const fragmentDoc = YAML.parseDocument(snippet.text, { uniqueKeys: true });
-  if (sourceDoc.errors.length || fragmentDoc.errors.length) {
-    return { error: "Der Entwurf oder der Textbaustein ist syntaktisch ungültig." };
-  }
-  if (!sourceDoc.contents) {
-    return { source: snippet.text };
-  }
-  if (!YAML.isMap(sourceDoc.contents) || !YAML.isMap(fragmentDoc.contents)) {
-    return { error: "Der Textbaustein kann in diesem YAML-Dokument nicht sicher zusammengeführt werden." };
-  }
-  for (const incoming of fragmentDoc.contents.items) {
-    const key = String(incoming.key?.value ?? "");
-    const existing = sourceDoc.contents.items.find((item) => String(item.key?.value ?? "") === key);
-    if (!existing) {
-      sourceDoc.contents.items.push(incoming);
-      continue;
-    }
-    if (snippet.id === "example") {
-      return { error: "Das vollständige Beispiel würde vorhandene Abschnitte ersetzen. Lade es stattdessen separat." };
-    }
-    const currentValue = existing.value;
-    const incomingValue = incoming.value;
-    if (YAML.isMap(currentValue) && YAML.isMap(incomingValue)) {
-      const existingKeys = new Set(currentValue.items.map((pair) => String(pair.key?.value ?? "")));
-      const collision = incomingValue.items.some((pair) => existingKeys.has(String(pair.key?.value ?? "")));
-      if (collision) {
-        return { error: `Der Abschnitt „${key}“ enthält bereits einen gleichnamigen Eintrag. Es wurde nichts geändert.` };
-      }
-      currentValue.items.push(...incomingValue.items);
-    } else if (YAML.isSeq(currentValue) && YAML.isSeq(incomingValue)) {
-      currentValue.items.push(...incomingValue.items);
-    } else {
-      return { error: `Der Abschnitt „${key}“ hat eine andere Struktur; es wurde nichts geändert.` };
-    }
-  }
-  return { source: sourceDoc.toString() };
-}
-
 function addSnippetButton(snippet) {
   const button = document.createElement("button");
   button.type = "button";
@@ -136,38 +91,13 @@ function addSnippetButton(snippet) {
   button.addEventListener("click", () => {
     const source = editor.state.doc.toString();
     const cursor = editor.state.selection.main.head;
-    const roots = YAML.parseDocument(snippet.text).contents;
-    const keys = YAML.isMap(roots) ? roots.items.map((item) => String(item.key?.value)) : [];
-    const existing = YAML.parseDocument(source).contents;
-    const hasCollision = YAML.isMap(existing) && keys.some((key) =>
-      existing.items.some((item) => String(item.key?.value) === key));
-
-    if (!hasCollision) {
-      if (!safeTopLevelInsertion(source, cursor)) {
-        message.textContent = "Bitte den Cursor an einen YAML-Abschnittsanfang oder in eine leere Zeile auf oberster Ebene setzen.";
-        return;
-      }
-      const insertion = snippet.text.trimEnd();
-      const before = source.slice(0, cursor);
-      const after = source.slice(cursor);
-      const prefix = before && !before.endsWith("\n") ? "\n" : "";
-      const suffix = after && !after.startsWith("\n") ? "\n" : "";
-      editor.dispatch({
-        changes: { from: cursor, insert: `${prefix}${insertion}\n${suffix}` },
-        selection: { anchor: cursor + prefix.length + insertion.length + 1 },
-      });
-      message.textContent = `${snippet.label} eingefügt.`;
-      showValidation();
+    const result = insertSnippet(source, snippet, cursor);
+    if (result.error) {
+      message.textContent = result.error;
       return;
     }
-
-    const merged = appendTemplate(source, snippet);
-    if (merged.error) {
-      message.textContent = merged.error;
-      return;
-    }
-    setDocument(merged.source);
-    message.textContent = `${snippet.label} sicher in vorhandene Abschnitte eingefügt.`;
+    setDocument(result.source);
+    message.textContent = `${snippet.label} ${result.message}.`;
   });
   snippetList.append(button);
 }
@@ -186,6 +116,36 @@ async function refreshProjects() {
     projectSelect.add(new Option(project.name, project.name));
   }
 }
+
+async function refreshTemplates() {
+  const response = await fetch("/api/user-templates");
+  if (!response.ok) return;
+  const { templates } = await response.json();
+  const select = $("#template-select");
+  select.replaceChildren(new Option("Beispiele und eigene Vorlagen …", ""));
+  select.add(new Option("WireViz-Beispielkabel", "example"));
+  for (const template of templates) {
+    select.add(new Option(template.name, template.name));
+  }
+}
+
+$("#template-select").addEventListener("change", async () => {
+  const name = $("#template-select").value;
+  if (!name) return;
+  if (name === "example") {
+    setDocument(example);
+    message.textContent = "Beispielkabel geladen.";
+    return;
+  }
+  const response = await fetch(`/api/user-templates/${encodeURIComponent(name)}`);
+  const result = await response.json();
+  if (!response.ok) {
+    message.textContent = result.message || "Vorlage konnte nicht geladen werden.";
+    return;
+  }
+  setDocument(result.yaml);
+  message.textContent = `Vorlage „${result.name}“ geladen.`;
+});
 
 projectSelect.addEventListener("change", async () => {
   if (!projectSelect.value) return;
@@ -220,6 +180,7 @@ $("#save-project").addEventListener("click", async () => {
 
 projectSelect.addEventListener("focus", refreshProjects);
 refreshProjects();
+refreshTemplates();
 
 $("#load-example").addEventListener("click", () => {
   setDocument(example);

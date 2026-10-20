@@ -19,6 +19,15 @@ def project_root(data_dir):
     return resolved
 
 
+def template_root(data_dir):
+    root = Path(data_dir) / "templates"
+    root.mkdir(mode=0o750, parents=True, exist_ok=True)
+    resolved = root.resolve()
+    if resolved.parent != Path(data_dir).resolve():
+        raise BadRequest("Invalid template storage directory.")
+    return resolved
+
+
 def project_path(data_dir, name):
     if not isinstance(name, str) or not name or len(name) > 100:
         raise BadRequest("Enter a project name of up to 100 characters.")
@@ -73,3 +82,37 @@ def list_projects(data_dir):
         if path.stat().st_size <= MAX_PROJECT_BYTES:
             projects.append({"name": path.stem, "updated": int(path.stat().st_mtime)})
     return sorted(projects, key=lambda item: item["name"].casefold())
+
+
+def list_user_templates(data_dir):
+    root = template_root(data_dir)
+    templates = []
+    for path in root.iterdir():
+        if path.is_symlink() or not path.is_file() or path.suffix.lower() not in PROJECT_EXTENSIONS:
+            continue
+        if PROJECT_NAME.fullmatch(path.stem) and path.stat().st_size <= MAX_PROJECT_BYTES:
+            templates.append({"name": path.name})
+    return sorted(templates, key=lambda item: item["name"].casefold())
+
+
+def load_user_template(data_dir, name):
+    if not isinstance(name, str) or len(name) > 105 or "/" in name or "\\" in name:
+        raise BadRequest("Template path is not allowed.")
+    path = template_root(data_dir) / name
+    if (
+        Path(name).suffix.lower() not in PROJECT_EXTENSIONS
+        or not PROJECT_NAME.fullmatch(Path(name).stem)
+        or path.is_symlink()
+        or path.resolve().parent != path.parent
+    ):
+        raise BadRequest("Template path is not allowed.")
+    try:
+        if not path.is_file():
+            raise NotFound("Template not found.")
+        if path.stat().st_size > MAX_PROJECT_BYTES:
+            raise BadRequest("Template exceeds the 1 MiB limit.")
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise NotFound("Template not found.") from exc
+    except UnicodeDecodeError as exc:
+        raise BadRequest("Template is not valid UTF-8 text.") from exc

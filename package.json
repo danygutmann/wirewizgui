@@ -1,23 +1,16 @@
 {
   "name": "wirewizgui",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test frontend/*.test.js",
+    "build": "vite build"
   },
-  "repository": {
-    "type": "git",
-    "url": "http://localhost:26831/danygutmann/wirewizgui"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "license": "MIT",
+  "type": "module",
   "dependencies": {
     "@codemirror/lang-yaml": "^6.1.2",
     "codemirror": "^6.0.2",
-    "yaml": "^2.8.1"
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "vite": "^7.3.5"

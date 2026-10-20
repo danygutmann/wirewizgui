@@ -51,7 +51,7 @@ def sanitize_svg(payload):
                 del element.attrib[name]
                 continue
             if attribute in {"fill", "stroke", "clip-path"}:
-                safe_color = re.fullmatch(r"#[0-9a-fA-F]{3,8}|[A-Za-z]+|none|url\\(#[\\w.-]+\\)", value)
+                safe_color = re.fullmatch(r"#[0-9a-fA-F]{3,8}|[A-Za-z]+|none|url\\(#[\w.-]+\\)", value)
                 if not safe_color:
                     del element.attrib[name]
             elif len(value) > 2048 or any(ord(char) < 32 for char in value):
