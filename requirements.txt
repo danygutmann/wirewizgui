@@ -1,0 +1,4 @@
+Flask==3.1.2
+PyYAML==6.0.3
+defusedxml==0.7.1
+gunicorn==23.0.0

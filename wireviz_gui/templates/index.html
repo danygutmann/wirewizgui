@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#162333">
+    <title>WireViz Cable Designer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dist/app.css') }}">
+    <script type="module" src="{{ url_for('static', filename='dist/app.js') }}"></script>
+  </head>
+  <body>
+    <textarea id="example-yaml" hidden>{{ example }}</textarea>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">WIRE HARNESS WORKBENCH</p>
+        <h1>WireViz Cable Designer</h1>
+      </div>
+      <div class="project-controls" aria-label="Projektverwaltung">
+        <label for="project-select">Projekt</label>
+        <select id="project-select"><option value="">Gespeicherte Projekte laden …</option></select>
+        <input id="project-name" type="text" maxlength="100" placeholder="Projektname" aria-label="Projektname">
+        <button id="save-project" class="button quiet" type="button">Speichern</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="editor-panel panel" aria-labelledby="editor-heading">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">KABELBESCHREIBUNG</p>
+            <h2 id="editor-heading">YAML-Editor</h2>
+          </div>
+          <span id="syntax-state" class="state-pill">Prüfe YAML …</span>
+        </div>
+        <div class="editor-toolbar">
+          <label class="button quiet file-button" for="open-file">Datei öffnen</label>
+          <input id="open-file" type="file" accept=".yaml,.yml,text/yaml,text/plain">
+          <button id="load-example" class="button quiet" type="button">Beispiel laden</button>
+          <button id="reset-editor" class="button quiet" type="button">Zurücksetzen</button>
+          <button id="download-yaml" class="button quiet" type="button">YAML herunterladen</button>
+        </div>
+        <div id="editor" class="editor" aria-label="WireViz YAML editor"></div>
+        <div class="editor-footer">
+          <details class="snippets">
+            <summary>Textbausteine einfügen</summary>
+            <div id="snippet-list" class="snippet-list"></div>
+          </details>
+          <span id="editor-message" class="message" role="status"></span>
+        </div>
+        <div id="syntax-errors" class="syntax-errors" role="alert" aria-live="polite"></div>
+        <div class="render-controls">
+          <span id="render-status" class="render-status" role="status">Bereit zum Rendern</span>
+          <button id="render-button" class="button primary" type="button">
+            <span class="spinner" aria-hidden="true"></span>
+            Create / Render
+          </button>
+        </div>
+      </section>
+
+      <section class="preview-panel panel" aria-labelledby="preview-heading">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">VORSCHAU</p>
+            <h2 id="preview-heading">Kabeldiagramm</h2>
+          </div>
+          <button id="download-svg" class="button quiet" type="button" disabled>SVG herunterladen</button>
+        </div>
+        <div id="preview" class="preview" aria-live="polite">
+          <div id="empty-preview" class="empty-preview">
+            <span class="preview-mark" aria-hidden="true">⌁</span>
+            <p>Das gerenderte Diagramm erscheint hier.</p>
+            <span>YAML prüfen und Create / Render auswählen.</span>
+          </div>
+          <img id="diagram" alt="Gerendertes WireViz-Kabeldiagramm" hidden>
+        </div>
+        <p class="preview-note">Die Vorschau enthält ausschließlich bereinigte SVG-Ausgabe.</p>
+      </section>
+    </main>
+    <footer>Lokaler YAML-Editor · Rendering über die konfigurierte WireViz-Web-API</footer>
+  </body>
+</html>
