@@ -1,0 +1,41 @@
+{
+  "example": "metadata:\n  title: Example cable\n  pn: EX-001\n  notes: Replace the example values with your own details.\n\nconnectors:\n  X1:\n    type: D-Sub\n    subtype: female\n    pinlabels: [GND, TX, RX]\n  X2:\n    type: Molex KK 254\n    subtype: female\n    pinlabels: [GND, RX, TX]\n\ncables:\n  W1:\n    gauge: 0.25 mm2\n    length: 0.2\n    color_code: DIN\n    wirecount: 3\n    shield: true\n\nconnections:\n  -\n    - X1: [1, 2, 3]\n    - W1: [1, 2, 3]\n    - X2: [1, 3, 2]\n",
+  "snippets": [
+    {
+      "id": "connector",
+      "label": "Stecker",
+      "section": "connectors",
+      "text": "connectors:\n  X3:\n    type: REPLACE_ME\n    subtype: female\n    pinlabels: [PIN1, PIN2]\n"
+    },
+    {
+      "id": "cable",
+      "label": "Kabel",
+      "section": "cables",
+      "text": "cables:\n  W2:\n    gauge: 0.25 mm2\n    length: 1\n    wirecount: 2\n    color_code: DIN\n"
+    },
+    {
+      "id": "connection",
+      "label": "Verbindung / Pinzuordnung",
+      "section": "connections",
+      "text": "connections:\n  -\n    - X1: [1, 2]\n    - W1: [1, 2]\n    - X2: [1, 2]\n"
+    },
+    {
+      "id": "shield",
+      "label": "Schirmung",
+      "section": "cables",
+      "text": "cables:\n  W3:\n    gauge: 0.25 mm2\n    length: 1\n    wirecount: 2\n    shield: true\n\nconnections:\n  -\n    - X1: 1\n    - W3: s\n"
+    },
+    {
+      "id": "metadata",
+      "label": "Metadaten",
+      "section": "metadata",
+      "text": "metadata:\n  title: REPLACE_ME\n  pn: REPLACE_ME\n  notes: REPLACE_ME\n"
+    },
+    {
+      "id": "example",
+      "label": "Vollständiges Beispielkabel",
+      "section": null,
+      "text": "metadata:\n  title: Example cable\n  pn: EX-001\n  notes: Replace the example values with your own details.\n\nconnectors:\n  X1:\n    type: D-Sub\n    subtype: female\n    pinlabels: [GND, TX, RX]\n  X2:\n    type: Molex KK 254\n    subtype: female\n    pinlabels: [GND, RX, TX]\n\ncables:\n  W1:\n    gauge: 0.25 mm2\n    length: 0.2\n    color_code: DIN\n    wirecount: 3\n    shield: true\n\nconnections:\n  -\n    - X1: [1, 2, 3]\n    - W1: [1, 2, 3]\n    - X2: [1, 3, 2]\n"
+    }
+  ]
+}
