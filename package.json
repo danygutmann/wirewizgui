@@ -5,14 +5,15 @@
     "test": "node --test frontend/*.test.js",
     "build": "vite build"
   },
-  "license": "MIT",
   "type": "module",
   "dependencies": {
+    "@codemirror/commands": "6.11.1",
     "@codemirror/lang-yaml": "^6.1.2",
     "codemirror": "^6.0.2",
     "yaml": "2.9.1"
   },
   "devDependencies": {
     "vite": "^7.3.5"
-  }
+  },
+  "private": true
 }

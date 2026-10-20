@@ -81,7 +81,7 @@ Der Integrationstest gegen einen laufenden echten API-Dienst ist standardmäßig
 ```sh
 WIREVIZ_INTEGRATION=1 \
 WIREVIZ_API_URL="http://localhost:3005" \
-python -m unittest tests/test_integration.py -v
+python -m unittest discover -s tests -p 'test_integration.py' -v
 ```
 
 Das Dockerfile baut die lokalen Browser-Assets reproduzierbar aus der festgeschriebenen `package-lock.json` und installiert gepinnte Python-Abhängigkeiten. Es benötigt zur Laufzeit weder Node.js noch Graphviz; Graphviz und WireViz bleiben im bestehenden API-Container.
@@ -169,7 +169,7 @@ networks:
 
 Diese Vorlage entspricht auch der Datei [`compose.yaml`](compose.yaml). Nach dem Deployment ist die GUI unter `http://<NAS-IP>:8087` erreichbar. Der einzige hier benötigte API-Endpunkt ist `http://wireviz-web:3005/render`; der Wert wird ausschließlich mit `WIREVIZ_API_URL` konfiguriert.
 
-Die Anwendung hat keine eingebaute Benutzeranmeldung. Im vertrauenswürdigen LAN betreiben oder den Zugriff mit einer geeigneten vorgeschalteten Authentifizierung/Firewall beschränken. `SECRET_KEY` mit einem nicht wiederverwendeten zufälligen Wert setzen und nicht veröffentlichen.
+Die Anwendung hat keine eingebaute Benutzeranmeldung. Im vertrauenswürdigen LAN betreiben oder den Zugriff mit einer geeigneten vorgeschalteten Authentifizierung/Firewall beschränken. `SECRET_KEY` mit einem nicht wiederverwendeten zufälligen Wert setzen und nicht veröffentlichen. Das Container-Image verweigert den Start, wenn der dokumentierte Secret-Platzhalter oder der bekannte Entwicklungsschlüssel verwendet wird.
 
 ## Backup und Fehlerbehebung
 

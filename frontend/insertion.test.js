@@ -9,7 +9,7 @@ const templateData = JSON.parse(
   await readFile(new URL("../wireviz_gui/snippets.json", import.meta.url), "utf8"),
 );
 const base = `metadata:
-  title: Existing
+  revision: 1
 connectors:
   X1:
     type: D-Sub
@@ -39,7 +39,10 @@ test("existing top-level sections merge without creating duplicate keys", () => 
 });
 
 test("entry collisions and full examples never overwrite existing content", () => {
-  const original = `${base}  X3:\n    type: Existing\n`;
+  const original = base.replace(
+    "    type: D-Sub",
+    "    type: D-Sub\n  X3:\n    type: Existing",
+  );
   const connector = templateData.snippets.find(({ id }) => id === "connector");
   const rejected = insertSnippet(original, connector);
   assert.match(rejected.error, /gleichnamigen Eintrag/);

@@ -6,6 +6,7 @@ class UniqueKeyLoader(yaml.SafeLoader):
 
 
 def _construct_mapping(loader, node, deep=False):
+    loader.flatten_mapping(node)
     mapping = {}
     for key_node, value_node in node.value:
         key = loader.construct_object(key_node, deep=deep)

@@ -2,6 +2,7 @@ import re
 import urllib.error
 import urllib.request
 import uuid
+from urllib.parse import urlsplit
 
 from defusedxml import ElementTree
 
@@ -51,7 +52,7 @@ def sanitize_svg(payload):
                 del element.attrib[name]
                 continue
             if attribute in {"fill", "stroke", "clip-path"}:
-                safe_color = re.fullmatch(r"#[0-9a-fA-F]{3,8}|[A-Za-z]+|none|url\\(#[\w.-]+\\)", value)
+                safe_color = re.fullmatch(r"#[0-9a-fA-F]{3,8}|[A-Za-z]+|none|url\(#[\w.-]+\)", value)
                 if not safe_color:
                     del element.attrib[name]
             elif len(value) > 2048 or any(ord(char) < 32 for char in value):
@@ -71,6 +72,9 @@ def sanitize_svg(payload):
 def render_yaml(yaml_source, api_url):
     if not api_url:
         raise ApiFailure("WIREVIZ_API_URL is not configured.")
+    parsed_url = urlsplit(api_url)
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
+        raise ApiFailure("WIREVIZ_API_URL must be an HTTP or HTTPS URL.")
     boundary = f"----WireVizGUI{uuid.uuid4().hex}"
     body = (
         f"--{boundary}\r\n"
@@ -87,7 +91,8 @@ def render_yaml(yaml_source, api_url):
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=API_TIMEOUT) as response:
+        opener = urllib.request.build_opener(_NoRedirect())
+        with opener.open(request, timeout=API_TIMEOUT) as response:
             content_type = response.headers.get_content_type()
             if response.status != 200:
                 raise ApiFailure(f"WireViz API returned HTTP {response.status}.")
@@ -110,3 +115,8 @@ def render_yaml(yaml_source, api_url):
         raise ApiFailure("The WireViz API could not be reached.") from exc
 
     return sanitize_svg(payload)
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, request, response, code, message, headers, new_url):
+        return None

@@ -166,7 +166,8 @@ $("#save-project").addEventListener("click", async () => {
     message.textContent = "Bitte zuerst einen Projektnamen eingeben.";
     return;
   }
-  const exists = [...projectSelect.options].some((option) => option.value === name);
+  const normalizedName = name.replace(/\.(yaml|yml)$/i, "");
+  const exists = [...projectSelect.options].some((option) => option.value === normalizedName);
   if (exists && !window.confirm(`Projekt „${name}“ überschreiben?`)) return;
   const response = await fetch("/api/projects", {
     method: "POST",

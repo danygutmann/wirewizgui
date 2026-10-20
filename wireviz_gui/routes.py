@@ -4,7 +4,7 @@ import uuid
 from pathlib import Path
 
 from flask import Blueprint, current_app, jsonify, render_template, request, session
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, HTTPException
 
 from wireviz_gui.storage import (
     list_projects,
@@ -34,7 +34,11 @@ def _source(payload):
     source = payload.get("yaml")
     if not isinstance(source, str):
         raise BadRequest("The YAML document must be text.")
-    if len(source.encode("utf-8")) > MAX_YAML_BYTES:
+    try:
+        content_length = len(source.encode("utf-8"))
+    except UnicodeEncodeError as exc:
+        raise BadRequest("YAML content must be valid UTF-8 text.") from exc
+    if content_length > MAX_YAML_BYTES:
         raise BadRequest("YAML content exceeds the 1 MiB limit.")
     return source
 
@@ -52,12 +56,19 @@ def _session_cache():
 def security_headers(response):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("Referrer-Policy", "same-origin")
+    if request.path.startswith("/api/"):
+        response.headers.setdefault("Cache-Control", "no-store")
     response.headers.setdefault(
         "Content-Security-Policy",
         "default-src 'self'; img-src 'self' blob:; style-src 'self' 'unsafe-inline'; "
         "script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'",
     )
     return response
+
+
+@api.app_errorhandler(HTTPException)
+def json_http_error(error):
+    return jsonify({"error": error.description}), error.code
 
 
 @api.get("/")
@@ -138,6 +149,6 @@ def user_templates():
     return jsonify({"templates": list_user_templates(current_app.config["DATA_DIR"])})
 
 
-@api.get("/api/user-templates/<name>")
+@api.get("/api/user-templates/<path:name>")
 def user_template(name):
     return jsonify({"name": name, "yaml": load_user_template(current_app.config["DATA_DIR"], name)})
